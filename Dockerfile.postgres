@@ -1,0 +1,20 @@
+# dump build stage
+FROM postgres:13.2 as dumper
+
+COPY inserts.sql /docker-entrypoint-initdb.d/
+
+RUN ["sed", "-i", "s/exec \"$@\"/echo \"skipping...\"/", "/usr/local/bin/docker-entrypoint.sh"]
+
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_DB=postgres
+ENV PGDATA=/data
+
+RUN ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
+
+# final build stage
+FROM postgres:13.2
+
+COPY --from=dumper /data $PGDATA
+
+# docker image build -f Dockerfile.postgres . -t myself/quarkus-benchmark-pg
